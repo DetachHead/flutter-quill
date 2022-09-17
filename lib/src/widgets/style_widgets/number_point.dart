@@ -56,10 +56,10 @@ class QuillNumberPoint extends StatelessWidget {
     s = count.toString();
     if (level % 3 == 1) {
       // a. b. c. d. e. ...
-      s = _toExcelSheetColumnTitle(count);
+      s = toExcelSheetColumnTitle(count);
     } else if (level % 3 == 2) {
       // i. ii. iii. ...
-      s = _intToRoman(count);
+      s = intToRoman(count);
     }
     // level % 3 == 0 goes back to 1. 2. 3.
 
@@ -70,39 +70,40 @@ class QuillNumberPoint extends StatelessWidget {
       child: Text(withDot ? '$s.' : s, style: style),
     );
   }
+}
 
-  String _toExcelSheetColumnTitle(int n) {
-    final result = StringBuffer();
-    while (n > 0) {
-      n--;
-      result.write(String.fromCharCode((n % 26).floor() + 97));
-      n = (n / 26).floor();
-    }
 
-    return result.toString().split('').reversed.join();
+String toExcelSheetColumnTitle(int n) {
+  final result = StringBuffer();
+  while (n > 0) {
+    n--;
+    result.write(String.fromCharCode((n % 26).floor() + 97));
+    n = (n / 26).floor();
   }
 
-  String _intToRoman(int input) {
-    var num = input;
+  return result.toString().split('').reversed.join();
+}
 
-    if (num < 0) {
-      return '';
-    } else if (num == 0) {
-      return 'nulla';
-    }
+String intToRoman(int input) {
+  var num = input;
 
-    final builder = StringBuffer();
-    for (var a = 0; a < arabianRomanNumbers.length; a++) {
-      final times = (num / arabianRomanNumbers[a])
-          .truncate(); // equals 1 only when arabianRomanNumbers[a] = num
-      // executes n times where n is the number of times you have to add
-      // the current roman number value to reach current num.
-      builder.write(romanNumbers[a] * times);
-      num -= times *
-          arabianRomanNumbers[
-              a]; // subtract previous roman number value from num
-    }
-
-    return builder.toString().toLowerCase();
+  if (num < 0) {
+    return '';
+  } else if (num == 0) {
+    return 'nulla';
   }
+
+  final builder = StringBuffer();
+  for (var a = 0; a < arabianRomanNumbers.length; a++) {
+    final times = (num / arabianRomanNumbers[a])
+        .truncate(); // equals 1 only when arabianRomanNumbers[a] = num
+    // executes n times where n is the number of times you have to add
+    // the current roman number value to reach current num.
+    builder.write(romanNumbers[a] * times);
+    num -= times *
+        arabianRomanNumbers[
+        a]; // subtract previous roman number value from num
+  }
+
+  return builder.toString().toLowerCase();
 }
