@@ -1,3 +1,24 @@
+# [6.1.6]
+* Upgrade i18n_extension to 6.0.0.
+
+# [6.1.5]
+* Fix formatting exception.
+
+# [6.1.4]
+* Add double quotes validation.
+
+# [6.1.3]
+* Revert "fix order list numbering (#988)".
+
+# [6.1.2]
+* Add typing shortcuts.
+
+# [6.1.1]
+* Fix order list numbering.
+
+# [6.1.0]
+* Add keyboard shortcuts for editor actions.
+
 # [6.0.10]
 * Upgrade device info plus to ^7.0.0.
 
