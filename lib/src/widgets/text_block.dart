@@ -6,12 +6,13 @@ import '../models/documents/nodes/block.dart';
 import '../models/documents/nodes/line.dart';
 import '../models/structs/vertical_spacing.dart';
 import '../utils/delta.dart';
+import '../utils/extensions/build_context.dart';
 import 'box.dart';
 import 'controller.dart';
 import 'cursor.dart';
 import 'default_styles.dart';
 import 'delegate.dart';
-import 'editor.dart';
+import 'editor/editor.dart';
 import 'link.dart';
 import 'style_widgets/bullet_point.dart';
 import 'style_widgets/checkbox_point.dart';
@@ -52,29 +53,30 @@ const List<String> romanNumbers = [
 ];
 
 class EditableTextBlock extends StatelessWidget {
-  const EditableTextBlock(
-      {required this.block,
-      required this.controller,
-      required this.textDirection,
-      required this.scrollBottomInset,
-      required this.verticalSpacing,
-      required this.textSelection,
-      required this.color,
-      required this.styles,
-      required this.enableInteractiveSelection,
-      required this.hasFocus,
-      required this.contentPadding,
-      required this.embedBuilder,
-      required this.linkActionPicker,
-      required this.cursorCont,
-      required this.indentLevelCounts,
-      required this.clearIndents,
-      required this.onCheckboxTap,
-      required this.readOnly,
-      this.onLaunchUrl,
-      this.customStyleBuilder,
-      this.customLinkPrefixes = const <String>[],
-      Key? key});
+  const EditableTextBlock({
+    required this.block,
+    required this.controller,
+    required this.textDirection,
+    required this.scrollBottomInset,
+    required this.verticalSpacing,
+    required this.textSelection,
+    required this.color,
+    required this.styles,
+    required this.enableInteractiveSelection,
+    required this.hasFocus,
+    required this.contentPadding,
+    required this.embedBuilder,
+    required this.linkActionPicker,
+    required this.cursorCont,
+    required this.indentLevelCounts,
+    required this.clearIndents,
+    required this.onCheckboxTap,
+    required this.readOnly,
+    this.onLaunchUrl,
+    this.customStyleBuilder,
+    this.customLinkPrefixes = const <String>[],
+    super.key,
+  });
 
   final Block block;
   final QuillController controller;
@@ -104,14 +106,19 @@ class EditableTextBlock extends StatelessWidget {
 
     final defaultStyles = QuillStyles.getStyles(context, false);
     return _EditableBlock(
-        block: block,
-        textDirection: textDirection,
-        padding: verticalSpacing,
-        scrollBottomInset: scrollBottomInset,
-        decoration: _getDecorationForBlock(block, defaultStyles) ??
-            const BoxDecoration(),
-        contentPadding: contentPadding,
-        children: _buildChildren(context, indentLevelCounts, clearIndents));
+      block: block,
+      textDirection: textDirection,
+      padding: verticalSpacing,
+      scrollBottomInset: scrollBottomInset,
+      decoration:
+          _getDecorationForBlock(block, defaultStyles) ?? const BoxDecoration(),
+      contentPadding: contentPadding,
+      children: _buildChildren(
+        context,
+        indentLevelCounts,
+        clearIndents,
+      ),
+    );
   }
 
   BoxDecoration? _getDecorationForBlock(
@@ -138,34 +145,53 @@ class EditableTextBlock extends StatelessWidget {
     for (final line in Iterable.castFrom<dynamic, Line>(block.children)) {
       index++;
       final editableTextLine = EditableTextLine(
-          line,
-          _buildLeading(context, line, index, indentLevelCounts, count),
-          TextLine(
-            line: line,
-            textDirection: textDirection,
-            embedBuilder: embedBuilder,
-            customStyleBuilder: customStyleBuilder,
-            styles: styles!,
-            readOnly: readOnly,
-            controller: controller,
-            linkActionPicker: linkActionPicker,
-            onLaunchUrl: onLaunchUrl,
-            customLinkPrefixes: customLinkPrefixes,
-          ),
-          _getIndentWidth(context),
-          _getSpacingForLine(line, index, count, defaultStyles),
-          textDirection,
-          textSelection,
-          color,
-          enableInteractiveSelection,
-          hasFocus,
-          View.of(context).devicePixelRatio,
-          cursorCont);
+        line,
+        _buildLeading(context, line, index, indentLevelCounts, count),
+        TextLine(
+          line: line,
+          textDirection: textDirection,
+          embedBuilder: embedBuilder,
+          customStyleBuilder: customStyleBuilder,
+          styles: styles!,
+          readOnly: readOnly,
+          controller: controller,
+          linkActionPicker: linkActionPicker,
+          onLaunchUrl: onLaunchUrl,
+          customLinkPrefixes: customLinkPrefixes,
+        ),
+        _getIndentWidth(context, count),
+        _getSpacingForLine(line, index, count, defaultStyles),
+        textDirection,
+        textSelection,
+        color,
+        enableInteractiveSelection,
+        hasFocus,
+        MediaQuery.devicePixelRatioOf(context),
+        cursorCont,
+      );
       final nodeTextDirection = getDirectionOfNode(line);
-      children.add(Directionality(
-          textDirection: nodeTextDirection, child: editableTextLine));
+      children.add(
+        Directionality(
+          textDirection: nodeTextDirection,
+          child: editableTextLine,
+        ),
+      );
     }
     return children.toList(growable: false);
+  }
+
+  double _numberPointWidth(double fontSize, int count) {
+    final length = '$count'.length;
+    switch (length) {
+      case 1:
+      case 2:
+        return fontSize * 2;
+      default:
+        // 3 -> 2.5
+        // 4 -> 3
+        // 5 -> 3.5
+        return fontSize * (length - (length - 2) / 2);
+    }
   }
 
   Widget? _buildLeading(BuildContext context, Line line, int index,
@@ -181,7 +207,7 @@ class EditableTextBlock extends StatelessWidget {
         count: count,
         style: defaultStyles.leading!.style,
         attrs: attrs,
-        width: fontSize * 2,
+        width: _numberPointWidth(fontSize, count),
         padding: fontSize / 2,
       );
     }
@@ -195,34 +221,25 @@ class EditableTextBlock extends StatelessWidget {
       );
     }
 
-    if (attrs[Attribute.list.key] == Attribute.checked) {
+    if (attrs[Attribute.list.key] == Attribute.checked ||
+        attrs[Attribute.list.key] == Attribute.unchecked) {
       return CheckboxPoint(
         size: fontSize,
-        value: true,
+        value: attrs[Attribute.list.key] == Attribute.checked,
         enabled: !readOnly,
         onChanged: (checked) => onCheckboxTap(line.documentOffset, checked),
         uiBuilder: defaultStyles.lists?.checkboxUIBuilder,
       );
     }
-
-    if (attrs[Attribute.list.key] == Attribute.unchecked) {
-      return CheckboxPoint(
-        size: fontSize,
-        value: false,
-        enabled: !readOnly,
-        onChanged: (checked) => onCheckboxTap(line.documentOffset, checked),
-        uiBuilder: defaultStyles.lists?.checkboxUIBuilder,
-      );
-    }
-
-    if (attrs.containsKey(Attribute.codeBlock.key)) {
+    if (attrs.containsKey(Attribute.codeBlock.key) &&
+        context.requireQuillEditorElementOptions.codeBlock.enableLineNumbers) {
       return QuillNumberPoint(
         index: index,
         indentLevelCounts: indentLevelCounts,
         count: count,
         style: defaultStyles.code!.style
             .copyWith(color: defaultStyles.code!.style.color!.withOpacity(0.4)),
-        width: fontSize * 2,
+        width: _numberPointWidth(fontSize, count),
         attrs: attrs,
         padding: fontSize,
         withDot: false,
@@ -231,7 +248,7 @@ class EditableTextBlock extends StatelessWidget {
     return null;
   }
 
-  double _getIndentWidth(BuildContext context) {
+  double _getIndentWidth(BuildContext context, int count) {
     final defaultStyles = QuillStyles.getStyles(context, false)!;
     final fontSize = defaultStyles.paragraph?.style.fontSize ?? 16;
     final attrs = block.style.attributes;
@@ -248,9 +265,13 @@ class EditableTextBlock extends StatelessWidget {
 
     var baseIndent = 0.0;
 
-    if (attrs.containsKey(Attribute.list.key) ||
-        attrs.containsKey(Attribute.codeBlock.key)) {
+    if (attrs.containsKey(Attribute.list.key)) {
       baseIndent = fontSize * 2;
+      if (attrs[Attribute.list.key] == Attribute.ol) {
+        baseIndent = _numberPointWidth(fontSize, count);
+      } else if (attrs.containsKey(Attribute.codeBlock.key)) {
+        baseIndent = _numberPointWidth(fontSize, count);
+      }
     }
 
     return baseIndent + extraIndent;

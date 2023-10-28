@@ -12,29 +12,41 @@ void main() {
           (tester) async {
         const tooltip = 'custom button';
 
-        await tester.pumpWidget(MaterialApp(
-            home: QuillToolbar.basic(
-          showRedo: false,
-          controller: QuillController.basic(),
-          customButtons: [const QuillCustomButton(tooltip: tooltip)],
-        )));
+        await tester.pumpWidget(
+          MaterialApp(
+            home: QuillProvider(
+              configurations: QuillConfigurations(
+                controller: QuillController.basic(),
+              ),
+              child: const QuillToolbar(
+                configurations: QuillToolbarConfigurations(
+                  showRedo: false,
+                  customButtons: [
+                    QuillCustomButton(tooltip: tooltip),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
 
         final builtinFinder = find.descendant(
-            of: find.byType(HistoryButton),
-            matching: find.byType(QuillIconButton),
-            matchRoot: true);
+          of: find.byType(QuillToolbarHistoryButton),
+          matching: find.byType(QuillToolbarIconButton),
+          matchRoot: true,
+        );
         expect(builtinFinder, findsOneWidget);
         final builtinButton =
-            builtinFinder.evaluate().first.widget as QuillIconButton;
+            builtinFinder.evaluate().first.widget as QuillToolbarIconButton;
 
         final customFinder = find.descendant(
-            of: find.byType(QuillToolbar),
+            of: find.byType(QuillBaseToolbar),
             matching: find.byWidgetPredicate((widget) =>
-                widget is QuillIconButton && widget.tooltip == tooltip),
+                widget is QuillToolbarIconButton && widget.tooltip == tooltip),
             matchRoot: true);
         expect(customFinder, findsOneWidget);
         final customButton =
-            customFinder.evaluate().first.widget as QuillIconButton;
+            customFinder.evaluate().first.widget as QuillToolbarIconButton;
 
         expect(customButton.fillColor, equals(builtinButton.fillColor));
       });
@@ -46,7 +58,13 @@ void main() {
 
       setUp(() {
         controller = QuillController.basic();
-        editor = QuillEditor.basic(controller: controller, readOnly: false);
+        editor = QuillEditor.basic(
+          // ignore: avoid_redundant_argument_values
+          configurations: const QuillEditorConfigurations(
+            // ignore: avoid_redundant_argument_values
+            readOnly: false,
+          ),
+        );
       });
 
       tearDown(() {
@@ -55,7 +73,16 @@ void main() {
 
       testWidgets('Refocus editor after controller clears document',
           (tester) async {
-        await tester.pumpWidget(MaterialApp(home: Column(children: [editor])));
+        await tester.pumpWidget(
+          QuillProvider(
+            configurations: QuillConfigurations(controller: controller),
+            child: MaterialApp(
+              home: Column(
+                children: [editor],
+              ),
+            ),
+          ),
+        );
         await tester.quillEnterText(find.byType(QuillEditor), 'test\n');
 
         editor.focusNode.unfocus();
@@ -68,7 +95,14 @@ void main() {
 
       testWidgets('Refocus editor after removing block attribute',
           (tester) async {
-        await tester.pumpWidget(MaterialApp(home: Column(children: [editor])));
+        await tester.pumpWidget(QuillProvider(
+          configurations: QuillConfigurations(controller: controller),
+          child: MaterialApp(
+            home: Column(
+              children: [editor],
+            ),
+          ),
+        ));
         await tester.quillEnterText(find.byType(QuillEditor), 'test\n');
 
         controller.formatSelection(Attribute.ul);
@@ -81,7 +115,16 @@ void main() {
       });
 
       testWidgets('Tap checkbox in unfocused editor', (tester) async {
-        await tester.pumpWidget(MaterialApp(home: Column(children: [editor])));
+        await tester.pumpWidget(
+          QuillProvider(
+            configurations: QuillConfigurations(controller: controller),
+            child: MaterialApp(
+              home: Column(
+                children: [editor],
+              ),
+            ),
+          ),
+        );
         await tester.quillEnterText(find.byType(QuillEditor), 'test\n');
 
         controller.formatSelection(Attribute.unchecked);

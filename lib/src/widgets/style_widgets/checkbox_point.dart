@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+
+import '../../utils/extensions/build_context.dart';
 
 class CheckboxPoint extends StatefulWidget {
   const CheckboxPoint({
@@ -7,8 +10,8 @@ class CheckboxPoint extends StatefulWidget {
     required this.enabled,
     required this.onChanged,
     this.uiBuilder,
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   final double size;
   final bool value;
@@ -23,8 +26,9 @@ class CheckboxPoint extends StatefulWidget {
 class _CheckboxPointState extends State<CheckboxPoint> {
   @override
   Widget build(BuildContext context) {
-    if (widget.uiBuilder != null) {
-      return widget.uiBuilder!.build(
+    final uiBuilder = widget.uiBuilder;
+    if (uiBuilder != null) {
+      return uiBuilder.build(
         context: context,
         isChecked: widget.value,
         onChanged: widget.onChanged,
@@ -43,7 +47,9 @@ class _CheckboxPointState extends State<CheckboxPoint> {
         : (widget.enabled
             ? theme.colorScheme.onSurface.withOpacity(0.5)
             : theme.colorScheme.onSurface.withOpacity(0.3));
-    return Center(
+    final child = Container(
+      alignment: AlignmentDirectional.centerEnd,
+      padding: EdgeInsetsDirectional.only(end: widget.size / 2),
       child: SizedBox(
         width: widget.size,
         height: widget.size,
@@ -59,13 +65,31 @@ class _CheckboxPointState extends State<CheckboxPoint> {
             onTap:
                 widget.enabled ? () => widget.onChanged(!widget.value) : null,
             child: widget.value
-                ? Icon(Icons.check,
-                    size: widget.size, color: theme.colorScheme.onPrimary)
+                ? Icon(
+                    Icons.check,
+                    size: widget.size,
+                    color: theme.colorScheme.onPrimary,
+                  )
                 : null,
           ),
         ),
       ),
     );
+    if (context.requireQuillSharedConfigurations.animationConfigurations
+        .checkBoxPointItem) {
+      return Animate(
+        effects: [
+          const SlideEffect(
+            duration: Duration(milliseconds: 70),
+          ),
+          const ScaleEffect(
+            duration: Duration(milliseconds: 70),
+          )
+        ],
+        child: child,
+      );
+    }
+    return child;
   }
 }
 

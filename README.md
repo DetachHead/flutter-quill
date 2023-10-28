@@ -1,3 +1,5 @@
+# Flutter Quill
+
 <p align="center" style="background-color:#282C34">
   <img src="https://user-images.githubusercontent.com/10923085/119221946-2de89000-baf2-11eb-8285-68168a78c658.png" width="600px">
 </p>
@@ -24,11 +26,37 @@
 
 FlutterQuill is a rich text editor and a [Quill] component for [Flutter].
 
-This library is a WYSIWYG editor built for the modern mobile platform, with web compatibility under development. Check out our [Youtube Playlist] or [Code Introduction] to take a detailed walkthrough of the code base. You can join our [Slack Group] for discussion.
-
-Demo App: [BULLET JOURNAL](https://bulletjournal.us/home/index.html)
+This library is a WYSIWYG editor built for the modern Android, iOS, web and desktop platforms. Check out our [Youtube Playlist] or [Code Introduction] to take a detailed walkthrough of the code base. You can join our [Slack Group] for discussion.
 
 Pub: [FlutterQuill]
+
+## Table of contents
+- [Flutter Quill](#flutter-quill)
+  - [Table of contents](#table-of-contents)
+  - [Demo](#demo)
+  - [Installation](#installation)
+  - [Usage](#usage)
+  - [Migration](#migration)
+  - [Input / Output](#input--output)
+  - [Configurations](#configurations)
+    - [Using Custom App Widget](#using-custom-app-widget)
+    - [Font Size](#font-size)
+    - [Font Family](#font-family)
+    - [Custom Buttons](#custom-buttons)
+  - [Embed Blocks](#embed-blocks)
+    - [Using the embed blocks from `flutter_quill_extensions`](#using-the-embed-blocks-from-flutter_quill_extensions)
+    - [Custom Size Image for Mobile](#custom-size-image-for-mobile)
+    - [Custom Size Image for other platforms (excluding web)](#custom-size-image-for-other-platforms-excluding-web)
+    - [Custom Embed Blocks](#custom-embed-blocks)
+    - [Custom Toolbar](#custom-toolbar)
+    - [Translation](#translation)
+    - [](#)
+      - [Contributing to translations](#contributing-to-translations)
+  - [Conversion to HTML](#conversion-to-html)
+  - [Testing](#testing)
+  - [License](#license)
+  - [Contributors](#contributors)
+  - [Sponsors](#sponsors)
 
 ## Demo
 
@@ -44,6 +72,30 @@ Pub: [FlutterQuill]
 
 ---
 
+## Installation
+
+```yaml
+dependencies:
+  flutter_quill: ^<latest-version-here>
+```
+
+<p align="center">OR</p>
+
+```yaml
+dependencies:
+  flutter_quill:
+    git: https://github.com/singerdmx/flutter-quill.git
+```
+
+> **Important note**
+>
+> Currently, we're in the process of refactoring the library's configurations. We're actively working on this, and while we don't have a development version available at the moment, your feedback is essential to us.
+>
+> Using the latest version and reporting any issues you encounter on GitHub will greatly contribute to the improvement of the library. Your input and insights are valuable in shaping a stable and reliable version for all our users. Thank you for being part of the open-source community!
+>
+> also [flutter_quill_extensions](https://pub.dev/packages/flutter_quill_extensions) will not work with the latest versions, please use [fresh_quill_extensions](https://pub.dev/packages/fresh_quill_extensions) as temporary alternative
+>
+
 ## Usage
 
 See the `example` directory for a minimal example of how to use FlutterQuill.  You typically just need to instantiate a controller:
@@ -55,22 +107,34 @@ QuillController _controller = QuillController.basic();
 and then embed the toolbar and the editor, within your app.  For example:
 
 ```dart
-Column(
-  children: [
-    QuillToolbar.basic(controller: _controller),
-    Expanded(
-      child: Container(
+QuillProvider(
+  configurations: QuillConfigurations(
+    controller: _controller,
+    sharedConfigurations: const QuillSharedConfigurations(
+      locale: Locale('de'),
+    ),
+  ),
+  child: Column(
+    children: [
+      const QuillToolbar(),
+      Expanded(
         child: QuillEditor.basic(
-          controller: _controller,
-          readOnly: false, // true for view only mode
+          configurations: const QuillEditorConfigurations(
+            readOnly: false,
+          ),
         ),
-      ),
-    )
-  ],
+      )
+    ],
+  ),
 )
 ```
 
-Check out [Sample Page] for advanced usage.
+And depending on your use case, you might want to dispose the `_controller` in dispose mehtod
+
+Check out [Sample Page] for more advanced usage.
+
+## Migration
+We have recently add [migration guide](/doc/migration.md) for migration from different versions
 
 ## Input / Output
 
@@ -97,21 +161,51 @@ _controller = QuillController(
         );
 ```
 
-## Web
+## Configurations
 
-For web development, use `flutter config --enable-web` for flutter or use [ReactQuill] for React.
+The `QuillToolbar` class lets you customize which formatting options are available.
+[Sample Page] provides sample code for advanced usage and configuration.
+
+For **web development**, use `flutter config --enable-web` for flutter or use [ReactQuill] for React.
 
 It is required to provide `EmbedBuilder`, e.g. [defaultEmbedBuildersWeb](https://github.com/singerdmx/flutter-quill/blob/master/example/lib/universal_ui/universal_ui.dart#L99).
 Also it is required to provide `webImagePickImpl`, e.g. [Sample Page](https://github.com/singerdmx/flutter-quill/blob/master/example/lib/pages/home_page.dart#L317).
 
-## Desktop
+For **desktop platforms** It is required to provide `filePickImpl` for toolbar image button, e.g. [Sample Page](https://github.com/singerdmx/flutter-quill/blob/master/example/lib/pages/home_page.dart#L297).
 
-It is required to provide `filePickImpl` for toolbar image button, e.g. [Sample Page](https://github.com/singerdmx/flutter-quill/blob/master/example/lib/pages/home_page.dart#L297).
 
-## Configuration
+### Using Custom App Widget
 
-The `QuillToolbar` class lets you customize which formatting options are available.
-[Sample Page] provides sample code for advanced usage and configuration.
+This project use some adaptive widgets like `AdaptiveTextSelectionToolbar` which require the following delegates:
+
+1. Default Material Localizations delegate
+2. Default Cupertino Localizations delegate
+3. Defualt Widgets Localizations delegate
+
+You don't need to include those since there are defined by default
+ but if you are using Custom app or you are overriding the `localizationsDelegates` in the App widget
+then please make sure it's including those:
+
+```dart
+localizationsDelegates: const [
+    DefaultCupertinoLocalizations.delegate,
+    DefaultMaterialLocalizations.delegate,
+    DefaultWidgetsLocalizations.delegate,
+],
+```
+
+And you might need more depending on your use case, for example if you are using custom localizations for your app, using custom app widget like [FluentApp](https://pub.dev/packages/fluent_ui)
+which will also need
+
+```dart
+localizationsDelegates: const [
+    // Required localizations delegates ...
+    FluentLocalizations.delegate,
+    AppLocalizations.delegate,
+],
+```
+
+in addition to the required delegates by this library
 
 ### Font Size
 
@@ -141,7 +235,7 @@ To add an Icon, we should use a new QuillCustomButton class
 
 ```dart
     QuillCustomButton(
-        icon:Icons.ac_unit,
+        iconData: Icons.ac_unit,
         onTap: () {
           debugPrint('snowflake');
         }
@@ -151,30 +245,30 @@ To add an Icon, we should use a new QuillCustomButton class
 Each `QuillCustomButton` is used as part of the `customButtons` option as follows:
 
 ```dart
-QuillToolbar.basic(
-   (...),
+QuillToolbar(
+  configurations: QuillToolbarConfigurations(
     customButtons: [
-        QuillCustomButton(
-            icon:Icons.ac_unit,
-            onTap: () {
-              debugPrint('snowflake1');
-            }
-        ),
-
-        QuillCustomButton(
-            icon:Icons.ac_unit,
-            onTap: () {
-              debugPrint('snowflake2');
-            }
-        ),
-
-        QuillCustomButton(
-            icon:Icons.ac_unit,
-            onTap: () {
-              debugPrint('snowflake3');
-            }
-        ),
-    ]
+      QuillCustomButton(
+        iconData: Icons.ac_unit,
+        onTap: () {
+          debugPrint('snowflake1');
+        },
+      ),
+      QuillCustomButton(
+        iconData: Icons.ac_unit,
+        onTap: () {
+          debugPrint('snowflake2');
+        },
+      ),
+      QuillCustomButton(
+        iconData: Icons.ac_unit,
+        onTap: () {
+          debugPrint('snowflake3');
+        },
+      ),
+    ],
+  ),
+),
 ```
 
 ## Embed Blocks
@@ -186,18 +280,53 @@ Provide a list of embed
 ### Using the embed blocks from `flutter_quill_extensions`
 
 ```dart
-import 'package:flutter_quill_extensions/flutter_quill_extensions.dart';
-
-QuillEditor.basic(
-  controller: controller,
-  embedBuilders: FlutterQuillEmbeds.builders(),
-);
-
-QuillToolbar.basic(
-  controller: controller,
-  embedButtons: FlutterQuillEmbeds.buttons(),
-);
+QuillToolbar(
+  configurations: QuillToolbarConfigurations(
+    embedButtons: FlutterQuillEmbeds.toolbarButtons(
+      imageButtonOptions: QuillToolbarImageButtonOptions(
+        onImagePickCallback: (file) async {
+          return file.path;
+        },
+      ),
+    ),
+  ),
+),
 ```
+
+```dart
+Expanded(
+  child: QuillEditor.basic(
+    configurations: QuillEditorConfigurations(
+      readOnly: true,
+      embedBuilders: FlutterQuillEmbeds.editorBuilders(
+        imageEmbedConfigurations:
+            const QuillEditorImageEmbedConfigurations(
+          forceUseMobileOptionMenuForImageClick: true,
+        ),
+      ),
+    ),
+  ),
+)
+```
+
+<!-- This should be added in the extensions package for better organization -->
+<!-- > [!WARNING]
+>
+> If you are using [flutter_quill_extensions](https://pub.dev/packages/flutter_quill_extensions) package to add support for images, videos and more
+> The extensions package require additional configurations:
+>
+> 1. We are using [`gal`](https://github.com/natsuk4ze/) plugin to save images.
+> For this to work, you need to add the appropriate permissions
+> to your `Info.plist` and `AndroidManifest.xml` files.
+> See <https://github.com/natsuk4ze/gal#-get-started> to add the needed lines.
+>
+> 2. We also use [`image_picker`](https://pub.dev/packages/image_picker) plugin for picking images so please make sure follow the instructions
+>
+> 3. For loading the image from the internet we need internet permission
+>    1. For Android, you need to add some permissions in `AndroidManifest.xml`, Please follow this [link](https://developer.android.com/training/basics/network-ops/connecting) for more info, the internet permission included by default only for debugging so you need to follow this link to add it in the release version too. you should allow loading images and videos only for the `https` protocol but if you want http too then you need to configure your android application to accept `http` in the release mode, follow this [link](https://stackoverflow.com/questions/45940861/android-8-cleartext-http-traffic-not-permitted) for more info.
+>    2. for macOS you also need to include a key in your `Info.plist`, please follow this [link](https://stackoverflow.com/a/61201081/18519412) to add the required configurations
+>
+> The extensions package also use [image_picker](https://pub.dev/packages/image_picker) which also require some configurations, follow this [link](https://pub.dev/packages/image_picker#installation). It's needed for Android, iOS, macOS, we must inform you that you can't pick photo using camera in desktop so make sure to handle that if you plan on add support for desktop, this might changed in the future and for more info follow this [link](https://pub.dev/packages/image_picker#windows-macos-and-linux) -->
 
 ### Custom Size Image for Mobile
 
@@ -210,6 +339,21 @@ Define `mobileWidth`, `mobileHeight`, `mobileMargin`, `mobileAlignment` as follo
       },
       "attributes":{
          "style":"mobileWidth: 50; mobileHeight: 50; mobileMargin: 10; mobileAlignment: topLeft"
+      }
+}
+```
+
+### Custom Size Image for other platforms (excluding web)
+
+Define `width`, `height`, `margin`, `alignment` as follows:
+
+```dart
+{
+      "insert": {
+         "image": "https://user-images.githubusercontent.com/122956/72955931-ccc07900-3d52-11ea-89b1-d468a6e2aa2b.png"
+      },
+      "attributes":{
+         "style":"width: 50; height: 50; margin: 10; alignment: topLeft"
       }
 }
 ```
@@ -256,6 +400,7 @@ class NotesEmbedBuilder extends EmbedBuilder {
     Embed node,
     bool readOnly,
     bool inline,
+    TextStyle textStyle,
   ) {
     final notes = NotesBlockEmbed(node.value.data).document;
 
@@ -338,20 +483,185 @@ And voila, we have a custom widget inside of the rich text editor!
 > 1. For more info and a video example, see the [PR of this feature](https://github.com/singerdmx/flutter-quill/pull/877)
 > 2. For more details, check out [this YouTube video](https://youtu.be/pI5p5j7cfHc)
 
+
+### Custom Toolbar
+If you want to use custom toolbar but still want the support of this libray
+You can use the `QuillBaseToolbar` which is the base for the `QuillToolbar`
+
+> If you are using the toolbar buttons like `QuillToolbarHistoryButton`, `QuillToolbarToggleStyleButton` in the somewhere like the the custom toolbar then you must provide them with `QuillToolbarProvider` inherited widget, you don't have to do this if you are using the `QuillToolbar` since it will be done for you
+
+Example:
+
+```dart
+QuillProvider(
+  configurations: QuillConfigurations(
+    controller: _controller,
+    sharedConfigurations: const QuillSharedConfigurations(),
+  ),
+  child: Column(
+    children: [
+      QuillToolbarProvider(
+        toolbarConfigurations: const QuillToolbarConfigurations(),
+        child: QuillBaseToolbar(
+          configurations: QuillBaseToolbarConfigurations(
+            toolbarSize: 15 * 2,
+            multiRowsDisplay: false,
+            childrenBuilder: (context) {
+              final controller = context.requireQuillController;
+              return [
+                QuillToolbarHistoryButton(
+                  controller: controller,
+                  options: const QuillToolbarHistoryButtonOptions(
+                      isUndo: true),
+                ),
+                QuillToolbarHistoryButton(
+                  controller: controller,
+                  options: const QuillToolbarHistoryButtonOptions(
+                      isUndo: false),
+                ),
+                QuillToolbarToggleStyleButton(
+                  attribute: Attribute.bold,
+                  controller: controller,
+                  options: const QuillToolbarToggleStyleButtonOptions(
+                    iconData: Icons.format_bold,
+                    iconSize: 20,
+                  ),
+                ),
+                QuillToolbarToggleStyleButton(
+                  attribute: Attribute.italic,
+                  controller: controller,
+                  options: const QuillToolbarToggleStyleButtonOptions(
+                    iconData: Icons.format_italic,
+                    iconSize: 20,
+                  ),
+                ),
+                QuillToolbarToggleStyleButton(
+                  attribute: Attribute.underline,
+                  controller: controller,
+                  options: const QuillToolbarToggleStyleButtonOptions(
+                    iconData: Icons.format_underline,
+                    iconSize: 20,
+                  ),
+                ),
+                QuillToolbarClearFormatButton(
+                  controller: controller,
+                  options: const QuillToolbarClearFormatButtonOptions(
+                    iconData: Icons.format_clear,
+                    iconSize: 20,
+                  ),
+                ),
+                VerticalDivider(
+                  indent: 12,
+                  endIndent: 12,
+                  color: Colors.grey.shade400,
+                ),
+                QuillToolbarSelectHeaderStyleButtons(
+                  controller: controller,
+                  options:
+                      const QuillToolbarSelectHeaderStyleButtonsOptions(
+                    iconSize: 20,
+                  ),
+                ),
+                QuillToolbarToggleStyleButton(
+                  attribute: Attribute.ol,
+                  controller: controller,
+                  options: const QuillToolbarToggleStyleButtonOptions(
+                    iconData: Icons.format_list_numbered,
+                    iconSize: 20,
+                  ),
+                ),
+                QuillToolbarToggleStyleButton(
+                  attribute: Attribute.ul,
+                  controller: controller,
+                  options: const QuillToolbarToggleStyleButtonOptions(
+                    iconData: Icons.format_list_bulleted,
+                    iconSize: 20,
+                  ),
+                ),
+                QuillToolbarToggleStyleButton(
+                  attribute: Attribute.blockQuote,
+                  controller: controller,
+                  options: const QuillToolbarToggleStyleButtonOptions(
+                    iconData: Icons.format_quote,
+                    iconSize: 20,
+                  ),
+                ),
+                VerticalDivider(
+                  indent: 12,
+                  endIndent: 12,
+                  color: Colors.grey.shade400,
+                ),
+                QuillToolbarIndentButton(
+                    controller: controller,
+                    isIncrease: true,
+                    options: const QuillToolbarIndentButtonOptions(
+                      iconData: Icons.format_indent_increase,
+                      iconSize: 20,
+                    )),
+                QuillToolbarIndentButton(
+                  controller: controller,
+                  isIncrease: false,
+                  options: const QuillToolbarIndentButtonOptions(
+                    iconData: Icons.format_indent_decrease,
+                    iconSize: 20,
+                  ),
+                ),
+              ];
+            },
+          ),
+        ),
+      ),
+      Expanded(
+        child: QuillEditor.basic(
+          configurations: const QuillEditorConfigurations(
+            readOnly: false,
+            placeholder: 'Write your notes',
+            padding: EdgeInsets.all(16),
+          ),
+        ),
+      )
+    ],
+  ),
+)
+```
+
+if you want more customized toolbar feel free to create your own and use the `controller` to interact with the editor. checkout the `QuillToolbar` and the buttons inside it to see an example of how that will works
+
 ### Translation
 
 The package offers translations for the quill toolbar and editor, it will follow the system locale unless you set your own locale with:
 
 ```dart
-QuillToolbar(locale: Locale('fr'), ...)
-QuillEditor(locale: Locale('fr'), ...)
+ QuillProvider(
+  configurations: QuillConfigurations(
+    controller: _controller,
+    sharedConfigurations: const QuillSharedConfigurations(
+      locale: Locale('fr'),
+    ),
+  ),
+  child: Column(
+    children: [
+      const QuillToolbar(
+        configurations: QuillToolbarConfigurations(),
+      ),
+      Expanded(
+        child: QuillEditor.basic(
+          configurations: const QuillEditorConfigurations(),
+        ),
+      )
+    ],
+  ),
+)
 ```
 
-Currently, translations are available for these 28 locales:
+###
+
+Currently, translations are available for these 31 locales:
 
 * `Locale('en')`
 * `Locale('ar')`
 * `Locale('bn')`
+* `Locale('bs')`
 * `Locale('cs')`
 * `Locale('de')`
 * `Locale('da')`
@@ -362,6 +672,7 @@ Currently, translations are available for these 28 locales:
 * `Locale('ko')`
 * `Locale('ru')`
 * `Locale('es')`
+* `Locale('tk')`
 * `Locale('tr')`
 * `Locale('uk')`
 * `Locale('ur')`
@@ -376,6 +687,7 @@ Currently, translations are available for these 28 locales:
 * `Locale('fa')`
 * `Locale('hi')`
 * `Locale('sr')`
+* `Locale('sw')`
 * `Locale('ja')`
 
 #### Contributing to translations
@@ -408,12 +720,21 @@ and then enter text using `quillEnterText`:
 await tester.quillEnterText(find.byType(QuillEditor), 'test\n');
 ```
 
-## Sponsors
+## License
 
-<a href="https://bulletjournal.us/home/index.html">
-<img src=
-"https://user-images.githubusercontent.com/122956/72955931-ccc07900-3d52-11ea-89b1-d468a6e2aa2b.png"
- width="150px" height="150px"></a>
+[MIT](LICENSE)
+
+## Contributors
+
+Special thanks for everyone that have contributed to this project...
+
+<a href="https://github.com/singerdmx/flutter-quill/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=singerdmx/flutter-quill" />
+</a>
+
+<br>
+
+Made with [contrib.rocks](https://contrib.rocks).
 
 [Quill]: https://quilljs.com/docs/formats
 [Flutter]: https://github.com/flutter/flutter
