@@ -1,80 +1,30 @@
-import 'package:flutter/cupertino.dart';
-
-import '../models/documents/attribute.dart';
+import 'package:flutter/widgets.dart' show Alignment, TextAlign;
 
 Map<String, String> parseKeyValuePairs(String s, Set<String> targetKeys) {
   final result = <String, String>{};
   final pairs = s.split(';');
   for (final pair in pairs) {
-    final _index = pair.indexOf(':');
-    if (_index < 0) {
+    final index = pair.indexOf(':');
+    if (index < 0) {
       continue;
     }
-    final _key = pair.substring(0, _index).trim();
-    if (targetKeys.contains(_key)) {
-      result[_key] = pair.substring(_index + 1).trim();
+    final key = pair.substring(0, index).trim();
+    if (targetKeys.contains(key)) {
+      result[key] = pair.substring(index + 1).trim();
     }
   }
 
   return result;
 }
 
-@Deprecated('Use replaceStyleStringWithSize instead')
-String replaceStyleString(
-  String s,
-  double width,
-  double height,
-) {
-  return replaceStyleStringWithSize(
-    s,
-    width: width,
-    height: height,
-    isMobile: true,
-  );
-}
-
-String replaceStyleStringWithSize(
-  String s, {
-  required double width,
-  required double height,
-  required bool isMobile,
-}) {
-  final result = <String, String>{};
-  final pairs = s.split(';');
-  for (final pair in pairs) {
-    final _index = pair.indexOf(':');
-    if (_index < 0) {
-      continue;
-    }
-    final _key = pair.substring(0, _index).trim();
-    result[_key] = pair.substring(_index + 1).trim();
+/// Get flutter [Alignment] value by [cssAlignment]
+Alignment getAlignment(String? cssAlignment) {
+  const defaultAlignment = Alignment.center;
+  if (cssAlignment == null) {
+    return defaultAlignment;
   }
 
-  if (isMobile) {
-    result[Attribute.mobileWidth] = width.toString();
-    result[Attribute.mobileHeight] = height.toString();
-  } else {
-    result[Attribute.width.key] = width.toString();
-    result[Attribute.height.key] = height.toString();
-  }
-  final sb = StringBuffer();
-  for (final pair in result.entries) {
-    sb
-      ..write(pair.key)
-      ..write(': ')
-      ..write(pair.value)
-      ..write('; ');
-  }
-  return sb.toString();
-}
-
-Alignment getAlignment(String? s) {
-  const _defaultAlignment = Alignment.center;
-  if (s == null) {
-    return _defaultAlignment;
-  }
-
-  final _index = [
+  final index = [
     'topLeft',
     'topCenter',
     'topRight',
@@ -84,9 +34,9 @@ Alignment getAlignment(String? s) {
     'bottomLeft',
     'bottomCenter',
     'bottomRight'
-  ].indexOf(s);
-  if (_index < 0) {
-    return _defaultAlignment;
+  ].indexOf(cssAlignment);
+  if (index < 0) {
+    return defaultAlignment;
   }
 
   return [
@@ -99,5 +49,15 @@ Alignment getAlignment(String? s) {
     Alignment.bottomLeft,
     Alignment.bottomCenter,
     Alignment.bottomRight
-  ][_index];
+  ][index];
+}
+
+TextAlign? getTextAlign(String value) {
+  return switch (value) {
+    'center' => TextAlign.center,
+    'right' => TextAlign.right,
+    'left' => TextAlign.left,
+    'justify' => null,
+    Object() => null,
+  };
 }

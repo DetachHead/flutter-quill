@@ -1,14 +1,14 @@
 import 'dart:math' as math;
 
-import '../../../widgets/embeds.dart';
-import '../../quill_delta.dart';
+import '../../../../quill_delta.dart';
+import '../../../widgets/quill/embeds.dart';
 import '../style.dart';
 import 'embeddable.dart';
 import 'line.dart';
 import 'node.dart';
 
 /// A leaf in Quill document tree.
-abstract class Leaf extends Node {
+abstract base class Leaf extends Node {
   /// Creates a new [Leaf] with specified [data].
   factory Leaf(Object data) {
     if (data is Embeddable) {
@@ -25,13 +25,6 @@ abstract class Leaf extends Node {
   /// [Embed] if this is an [BlockEmbed].
   Object get value => _value;
   Object _value;
-
-  @override
-  void applyStyle(Style value) {
-    assert(value.isInline || value.isIgnored || value.isEmpty,
-        'Unable to apply Style to leaf: $value');
-    super.applyStyle(value);
-  }
 
   @override
   Line? get parent => super.parent as Line?;
@@ -216,10 +209,10 @@ abstract class Leaf extends Node {
 /// The reason we are renamed quill Text to [QuillText] so it doesn't
 /// conflict with the one from the widgets, material or cupertino library
 ///
-class QuillText extends Leaf {
-  QuillText([String text = ''])
+base class QuillText extends Leaf {
+  QuillText([String super.text = ''])
       : assert(!text.contains('\n')),
-        super.val(text);
+        super.val();
 
   @override
   Node newInstance() => QuillText(value);
@@ -249,8 +242,8 @@ class QuillText extends Leaf {
 /// necessarily mean the embed will look according to that style. For instance,
 /// applying "bold" style to an image gives no effect, while adding a "link" to
 /// an image actually makes the image react to user's action.
-class Embed extends Leaf {
-  Embed(Embeddable data) : super.val(data);
+base class Embed extends Leaf {
+  Embed(Embeddable super.data) : super.val();
 
   // Refer to https://www.fileformat.info/info/unicode/char/fffc/index.htm
   static const kObjectReplacementCharacter = '\uFFFC';

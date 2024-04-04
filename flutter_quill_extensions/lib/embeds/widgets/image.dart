@@ -1,12 +1,14 @@
-import 'dart:convert';
+import 'dart:convert' show base64;
 import 'dart:io' show File;
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:photo_view/photo_view.dart';
 
-import '../embed_types.dart';
-import '../utils.dart';
+import '../../models/config/image/editor/image_configurations.dart';
+import '../../utils/utils.dart';
+import '../image/editor/image_embed_types.dart';
 
 const List<String> imageFileExtensions = [
   '.jpeg',
@@ -28,39 +30,55 @@ String getImageStyleString(QuillController controller) {
   return s ?? '';
 }
 
-Image getQuillImageByUrl(
-  String imageUrl, {
+/// [imageProviderBuilder] To override the return value pass value to it
+/// [imageSource] The source of the image in the quill delta json document
+/// It could be http, file, network, asset, or base 64 image
+ImageProvider getImageProviderByImageSource(
+  String imageSource, {
+  required ImageEmbedBuilderProviderBuilder? imageProviderBuilder,
+  required String assetsPrefix,
+  required BuildContext context,
+}) {
+  if (imageProviderBuilder != null) {
+    return imageProviderBuilder(context, imageSource);
+  }
+
+  if (isImageBase64(imageSource)) {
+    return MemoryImage(base64.decode(imageSource));
+  }
+
+  if (isHttpBasedUrl(imageSource)) {
+    return NetworkImage(imageSource);
+  }
+
+  if (imageSource.startsWith(assetsPrefix)) {
+    return AssetImage(imageSource);
+  }
+
+  // File image
+  if (kIsWeb) {
+    return NetworkImage(imageSource);
+  }
+  return FileImage(File(imageSource));
+}
+
+Image getImageWidgetByImageSource(
+  String imageSource, {
+  required BuildContext context,
   required ImageEmbedBuilderProviderBuilder? imageProviderBuilder,
   required ImageErrorWidgetBuilder? imageErrorWidgetBuilder,
+  required String assetsPrefix,
   double? width,
   double? height,
   AlignmentGeometry alignment = Alignment.center,
 }) {
-  if (isImageBase64(imageUrl)) {
-    return Image.memory(base64.decode(imageUrl),
-        width: width, height: height, alignment: alignment);
-  }
-
-  if (imageProviderBuilder != null) {
-    return Image(
-      image: imageProviderBuilder(imageUrl),
-      width: width,
-      height: height,
-      alignment: alignment,
-      errorBuilder: imageErrorWidgetBuilder,
-    );
-  }
-  if (isHttpBasedUrl(imageUrl)) {
-    return Image.network(
-      imageUrl,
-      width: width,
-      height: height,
-      alignment: alignment,
-      errorBuilder: imageErrorWidgetBuilder,
-    );
-  }
-  return Image.file(
-    File(imageUrl),
+  return Image(
+    image: getImageProviderByImageSource(
+      context: context,
+      imageSource,
+      imageProviderBuilder: imageProviderBuilder,
+      assetsPrefix: assetsPrefix,
+    ),
     width: width,
     height: height,
     alignment: alignment,
@@ -97,27 +115,14 @@ String appendFileExtensionToImageUrl(String url) {
 class ImageTapWrapper extends StatelessWidget {
   const ImageTapWrapper({
     required this.imageUrl,
-    required this.imageProviderBuilder,
-    required this.imageErrorWidgetBuilder,
+    required this.configurations,
+    required this.assetsPrefix,
+    super.key,
   });
 
   final String imageUrl;
-  final ImageEmbedBuilderProviderBuilder? imageProviderBuilder;
-  final ImageEmbedBuilderErrorWidgetBuilder? imageErrorWidgetBuilder;
-
-  ImageProvider _imageProviderByUrl(
-    String imageUrl, {
-    required ImageEmbedBuilderProviderBuilder? customImageProviderBuilder,
-  }) {
-    if (customImageProviderBuilder != null) {
-      return customImageProviderBuilder(imageUrl);
-    }
-    if (isHttpBasedUrl(imageUrl)) {
-      return NetworkImage(imageUrl);
-    }
-
-    return FileImage(File(imageUrl));
-  }
+  final QuillEditorImageEmbedConfigurations configurations;
+  final String assetsPrefix;
 
   @override
   Widget build(BuildContext context) {
@@ -129,11 +134,13 @@ class ImageTapWrapper extends StatelessWidget {
         child: Stack(
           children: [
             PhotoView(
-              imageProvider: _imageProviderByUrl(
+              imageProvider: getImageProviderByImageSource(
+                context: context,
                 imageUrl,
-                customImageProviderBuilder: imageProviderBuilder,
+                imageProviderBuilder: configurations.imageProviderBuilder,
+                assetsPrefix: assetsPrefix,
               ),
-              errorBuilder: imageErrorWidgetBuilder,
+              errorBuilder: configurations.imageErrorWidgetBuilder,
               loadingBuilder: (context, event) {
                 return Container(
                   color: Colors.black,
@@ -168,8 +175,11 @@ class ImageTapWrapper extends StatelessWidget {
                       bottom: 0,
                       left: 0,
                       right: 0,
-                      child:
-                          Icon(Icons.close, color: Colors.grey[400], size: 28),
+                      child: Icon(
+                        Icons.close,
+                        color: Colors.grey[400],
+                        size: 28,
+                      ),
                     )
                   ],
                 ),

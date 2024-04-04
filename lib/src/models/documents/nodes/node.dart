@@ -1,7 +1,7 @@
 import 'dart:collection';
 
-import '../../../widgets/embeds.dart';
-import '../../quill_delta.dart';
+import '../../../../quill_delta.dart';
+import '../../../widgets/quill/embeds.dart';
 import '../attribute.dart';
 import '../style.dart';
 import 'container.dart';
@@ -17,10 +17,24 @@ import 'line.dart';
 ///
 /// The current parent node is exposed by the [parent] property. A node is
 /// considered [mounted] when the [parent] property is not `null`.
-abstract class Node extends LinkedListEntry<Node> {
+abstract base class Node extends LinkedListEntry<Node> {
   /// Current parent of this node. May be null if this node is not mounted.
-  Container? parent;
+  QuillContainer? parent;
 
+  /// The style attributes
+  /// Note: This is not the same as style attribute of css
+  ///
+  /// Example:
+  ///
+  ///   {
+  ///   "insert": {
+  ///     "image": "https://user-images.githubusercontent.com/122956/72955931-ccc07900-3d52-11ea-89b1-d468a6e2aa2b.png"
+  ///   },
+  ///   "attributes": { // this one
+  ///     "width": "230",
+  ///     "style": "display: block; margin: auto; width: 500px;" // Not this
+  ///   }
+  /// },
   Style get style => _style;
   Style _style = const Style();
 
@@ -127,12 +141,12 @@ abstract class Node extends LinkedListEntry<Node> {
 }
 
 /// Root node of document tree.
-class Root extends Container<Container<Node?>> {
+base class Root extends QuillContainer<QuillContainer<Node?>> {
   @override
   Node newInstance() => Root();
 
   @override
-  Container<Node?> get defaultChild => Line();
+  QuillContainer<Node?> get defaultChild => Line();
 
   @override
   Delta toDelta() => children

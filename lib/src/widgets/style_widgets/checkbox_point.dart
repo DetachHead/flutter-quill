@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 
-import '../../utils/extensions/build_context.dart';
-
-class CheckboxPoint extends StatefulWidget {
-  const CheckboxPoint({
+class QuillEditorCheckboxPoint extends StatefulWidget {
+  const QuillEditorCheckboxPoint({
     required this.size,
     required this.value,
     required this.enabled,
@@ -20,10 +17,11 @@ class CheckboxPoint extends StatefulWidget {
   final QuillCheckboxBuilder? uiBuilder;
 
   @override
-  _CheckboxPointState createState() => _CheckboxPointState();
+  QuillEditorCheckboxPointState createState() =>
+      QuillEditorCheckboxPointState();
 }
 
-class _CheckboxPointState extends State<CheckboxPoint> {
+class QuillEditorCheckboxPointState extends State<QuillEditorCheckboxPoint> {
   @override
   Widget build(BuildContext context) {
     final uiBuilder = widget.uiBuilder;
@@ -75,20 +73,6 @@ class _CheckboxPointState extends State<CheckboxPoint> {
         ),
       ),
     );
-    if (context.requireQuillSharedConfigurations.animationConfigurations
-        .checkBoxPointItem) {
-      return Animate(
-        effects: [
-          const SlideEffect(
-            duration: Duration(milliseconds: 70),
-          ),
-          const ScaleEffect(
-            duration: Duration(milliseconds: 70),
-          )
-        ],
-        child: child,
-      );
-    }
     return child;
   }
 }
